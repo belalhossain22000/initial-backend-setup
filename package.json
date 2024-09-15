@@ -1,0 +1,50 @@
+{
+  "name": "shakvault",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start:prod": "node ./dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "postinstall": "prisma generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.14.11",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.15",
+    "prisma": "^5.19.1",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "@types/jsonwebtoken": "^9.0.6",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^2.3.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "http-status": "^1.7.4",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.8.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.14",
+    "nodemon": "^3.1.4",
+    "socket.io": "^4.7.5",
+    "stripe": "^16.8.0",
+    "zod": "^3.23.8"
+  }
+}
