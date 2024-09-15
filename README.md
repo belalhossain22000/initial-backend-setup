@@ -1,6 +1,6 @@
 # API Documentation
 
-### base api: https://shakvault-server.vercel.app/api/v1
+
 
 ## Table of Contents
 - [Auth Routes](#auth-routes)
