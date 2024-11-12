@@ -4,7 +4,7 @@ import config from "../../config";
 import { JwtPayload, Secret } from "jsonwebtoken";
 
 import httpStatus from "http-status";
-import ApiError from "../errors/ApiErrors";
+import ApiError from "../../errors/ApiErrors";
 import { jwtHelpers } from "../../helpars/jwtHelpers";
 import prisma from "../../shared/prisma";
 
@@ -35,10 +35,6 @@ const auth = (...roles: string[]) => {
       if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
       }
-
-      // if (user.isDeleted) {
-      //   throw new ApiError(httpStatus.BAD_REQUEST, "This user is deleted ! ");
-      // }
 
       if (user.status === "BLOCKED") {
         throw new ApiError(httpStatus.FORBIDDEN, "Your account is blocked!");

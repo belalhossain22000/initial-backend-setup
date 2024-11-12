@@ -1,13 +1,14 @@
 {
-  "name": "shakvault",
+  "name": "best-one",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start:prod": "node ./dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "postinstall": "prisma generate"
+    "generate": "ts-node src/generate-module.ts",
+    "postinstall": "prisma generate",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",

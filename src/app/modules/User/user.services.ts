@@ -1,54 +1,58 @@
 import prisma from "../../../shared/prisma";
-import ApiError from "../../errors/ApiErrors";
+import ApiError from "../../../errors/ApiErrors";
 import { IUser, IUserFilterRequest } from "./user.interface";
 import * as bcrypt from "bcrypt";
-import { IPaginationOptions } from "../../interfaces/paginations";
+import { IPaginationOptions } from "../../../interfaces/paginations";
 import { paginationHelper } from "../../../helpars/paginationHelper";
-import { Prisma, UserRole, UserStatus } from "@prisma/client";
+import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
 import { userSearchAbleFields } from "./user.costant";
 import config from "../../../config";
+import httpStatus from "http-status";
 
 // Create a new user in the database.
-const createUserIntoDb = async (payload: IUser) => {
-  // Check if user with the same email or username already exists
+const createUserIntoDb = async (payload: User) => {
   const existingUser = await prisma.user.findFirst({
     where: {
-      email: payload.email,
+      OR: [{ email: payload.email }, { username: payload.username }],
     },
   });
 
   if (existingUser) {
-    throw new ApiError(
-      400,
-      `User with this email ${payload.email}  already exists`
-    );
+    if (existingUser.email === payload.email) {
+      throw new ApiError(
+        400,
+        `User with this email ${payload.email} already exists`
+      );
+    }
+    if (existingUser.username === payload.username) {
+      throw new ApiError(
+        400,
+        `User with this username ${payload.username} already exists`
+      );
+    }
   }
-
   const hashedPassword: string = await bcrypt.hash(
     payload.password,
     Number(config.bcrypt_salt_rounds)
   );
 
   const result = await prisma.user.create({
-    data: {
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      email: payload.email,
-      password: hashedPassword,
-      role: UserRole.USER,
-      status: UserStatus.ACTIVE,
-      profession: payload.profession,
-      promoCode: payload.promoCode,
-      isDeleted: false,
+    data: { ...payload, password: hashedPassword },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
-
-  // const { password, ...userWithoutPassword } = result;
 
   return result;
 };
 
-// reterive all users from the database
+// reterive all users from the database also searcing anf filetering
 const getUsersFromDb = async (
   params: IUserFilterRequest,
   options: IPaginationOptions
@@ -58,7 +62,6 @@ const getUsersFromDb = async (
 
   const andCondions: Prisma.UserWhereInput[] = [];
 
-  //console.log(filterData);
   if (params.searchTerm) {
     andCondions.push({
       OR: userSearchAbleFields.map((field) => ({
@@ -83,6 +86,7 @@ const getUsersFromDb = async (
 
   const result = await prisma.user.findMany({
     where: whereConditons,
+    skip,
     orderBy:
       options.sortBy && options.sortOrder
         ? {
@@ -93,14 +97,11 @@ const getUsersFromDb = async (
           },
     select: {
       id: true,
+      name: true,
+      username: true,
       email: true,
-      firstName: true,
-      lastName: true,
-      profession: true,
-      promoCode: true,
-      isDeleted: true,
+      profileImage: true,
       role: true,
-      status: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -122,8 +123,8 @@ const getUsersFromDb = async (
   };
 };
 
-// update profile
-const updateProfile = async (user: IUser, payload: IUser) => {
+// update profile by user won profile uisng token or email and id
+const updateProfile = async (user: IUser, payload: User) => {
   const userInfo = await prisma.user.findUnique({
     where: {
       email: user.email,
@@ -136,50 +137,72 @@ const updateProfile = async (user: IUser, payload: IUser) => {
   }
 
   // Update the user profile with the new information
-  const updatedUser = await prisma.user.update({
+  const result = await prisma.user.update({
     where: {
       email: userInfo.email,
     },
     data: {
-      firstName: payload.firstName || userInfo.firstName,
-      lastName: payload.lastName || userInfo.lastName,
-      profession: payload.profession || userInfo.profession,
-      promoCode: payload.promoCode || userInfo.promoCode,
+      name: payload.name || userInfo.name,
+      username: payload.username || userInfo.username,
+      email: payload.email || userInfo.email,
+      profileImage: payload.profileImage || userInfo.profileImage,
+      phoneNumber: payload.phoneNumber || userInfo.phoneNumber,
     },
     select: {
       id: true,
-      firstName: true,
-      lastName: true,
-      profession: true,
-      promoCode: true,
+      name: true,
+      username: true,
+
+      
       email: true,
-      role: true,
-      status: true,
+      profileImage: true,
+      phoneNumber: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 
-  return updatedUser;
+  if (!result)
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to update user profile"
+    );
+
+  return result;
 };
 
+// update user data into database by id fir admin
 const updateUserIntoDb = async (payload: IUser, id: string) => {
-  // Retrieve the existing user info
   const userInfo = await prisma.user.findUniqueOrThrow({
     where: {
       id: id,
     },
   });
+  if (!userInfo)
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found with id: " + id);
 
-  // Update the user with the provided payload
   const result = await prisma.user.update({
     where: {
       id: userInfo.id,
     },
-    data: {
-      status: payload.status || userInfo.status,
-      role: payload.role || userInfo.role,
-      updatedAt: new Date(),
+    data: payload,
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      profileImage: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
+
+  if (!result)
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to update user profile"
+    );
 
   return result;
 };

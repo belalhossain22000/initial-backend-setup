@@ -2,9 +2,9 @@ import { Prisma } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import { ZodError } from "zod";
-import handleZodError from "../errors/handleZodError";
-import parsePrismaValidationError from "../errors/parsePrismaValidationError";
-import ApiError from "../errors/ApiErrors";
+import handleZodError from "../../errors/handleZodError";
+import parsePrismaValidationError from "../../errors/parsePrismaValidationError";
+import ApiError from "../../errors/ApiErrors";
 
 // TODO Replace `config.NODE_ENV` with your actual environment configuration
 

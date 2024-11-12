@@ -26,7 +26,9 @@ app.use(express.static("public"));
 // Route handler for root endpoint
 app.get("/", (req: Request, res: Response) => {
   res.send({
-    Message: "Rydleap Server is Running",
+    success:true,
+    statusCode: httpStatus.OK,
+    message: "Welcome to Rydleap API!",
   });
 });
 

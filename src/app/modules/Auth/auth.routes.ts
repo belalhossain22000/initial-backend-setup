@@ -19,14 +19,14 @@ router.post(
 router.post("/logout", AuthController.logoutUser);
 
 router.get(
-  "/get-me",
+  "/profile",
   auth(UserRole.ADMIN, UserRole.USER),
   AuthController.getMyProfile
 );
 
 router.put(
   "/change-password",
-  auth(UserRole.ADMIN, UserRole.USER),
+  auth(),
   validateRequest(authValidation.changePasswordValidationSchema),
   AuthController.changePassword
 );

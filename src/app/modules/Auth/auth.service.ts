@@ -3,7 +3,7 @@ import config from "../../../config";
 import { jwtHelpers } from "../../../helpars/jwtHelpers";
 import prisma from "../../../shared/prisma";
 import * as bcrypt from "bcrypt";
-import ApiError from "../../errors/ApiErrors";
+import ApiError from "../../../errors/ApiErrors";
 import emailSender from "./emailSender";
 import { UserStatus } from "@prisma/client";
 import httpStatus from "http-status";
@@ -40,13 +40,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
     config.jwt.expires_in as string
   );
 
-  const result = {
-    id: userData.id,
-    email: userData.email,
-    role: userData.role,
-    token: accessToken,
-  };
-  return result;
+  return { token: accessToken };
 };
 
 // get user profile
@@ -62,14 +56,11 @@ const getMyProfile = async (userToken: string) => {
     },
     select: {
       id: true,
+      name: true,
+      username: true,
       email: true,
-      firstName: true,
-      lastName: true,
-      isDeleted: true,
-      profession: true,
-      promoCode: true,
-      status: true,
-      role: true,
+      profileImage: true,
+      phoneNumber: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -125,20 +116,21 @@ const forgotPassword = async (payload: { email: string }) => {
   });
 
   const resetPassToken = jwtHelpers.generateToken(
-    { email: userData.email, role: userData.role },
+    { email: userData.email, role: userData.role, id: userData.id },
     config.jwt.reset_pass_secret as Secret,
     config.jwt.reset_pass_token_expires_in as string
   );
 
   const resetPassLink =
     config.reset_pass_link + `?userId=${userData.id}&token=${resetPassToken}`;
+ 
 
   await emailSender(
     "Reset Your Password",
     userData.email,
     `
      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <p>Dear ${userData.firstName},</p>
+          <p>Dear ${userData.name},</p>
           
           <p>We received a request to reset your password. Click the button below to reset your password:</p>
           
@@ -159,16 +151,7 @@ const forgotPassword = async (payload: { email: string }) => {
 };
 
 // reset password
-const resetPassword = async (
-  token: string,
-  payload: { id: string; password: string }
-) => {
-  const userData = await prisma.user.findUniqueOrThrow({
-    where: {
-      id: payload.id,
-    },
-  });
-
+const resetPassword = async (token: string, payload: { password: string }) => {
   const isValidToken = jwtHelpers.verifyToken(
     token,
     config.jwt.reset_pass_secret as Secret
@@ -178,13 +161,19 @@ const resetPassword = async (
     throw new ApiError(httpStatus.FORBIDDEN, "Forbidden!");
   }
 
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      id: isValidToken.id,
+    },
+  });
+
   // hash password
   const password = await bcrypt.hash(payload.password, 12);
 
   // update into database
   await prisma.user.update({
     where: {
-      id: payload.id,
+      id: userData.id,
     },
     data: {
       password,

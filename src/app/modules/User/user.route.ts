@@ -25,6 +25,6 @@ router.put(
 );
 
 // *!update  user
-router.put("/:id", auth(UserRole.ADMIN), userController.updateUser);
+router.put("/:id", userController.updateUser);
 
 export const userRoutes = router;

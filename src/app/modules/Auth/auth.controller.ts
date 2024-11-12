@@ -20,8 +20,8 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
   // Clear the token cookie
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "development",
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
   });
 
   sendResponse(res, {
