@@ -11,7 +11,7 @@ import router from "./app/routes";
 const app: Application = express();
 export const corsOptions = {
   origin: ["http://localhost:3001", "http://localhost:3000"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE","PATCh"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
@@ -28,7 +28,7 @@ app.get("/", (req: Request, res: Response) => {
   res.send({
     success:true,
     statusCode: httpStatus.OK,
-    message: "Welcome to Rydleap API!",
+    message: "Welcome to Server !",
   });
 });
 
