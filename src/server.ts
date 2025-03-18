@@ -18,17 +18,12 @@ async function main() {
     if (server) {
       server.close(() => {
         console.info("Server closed!");
-        restartServer(); 
       });
     } else {
       process.exit(1);
     }
   };
 
-  const restartServer = () => {
-    console.info("Restarting server...");
-    main();
-  };
 
   process.on("uncaughtException", (error) => {
     console.log("Uncaught Exception: ", error);
