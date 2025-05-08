@@ -13,9 +13,9 @@ router.post(
   validateRequest(UserValidation.CreateUserValidationSchema),
   userController.createUser
 );
+
 // get all  user
 router.get("/", userController.getUsers);
-
 
 //get my profile
 router.get(

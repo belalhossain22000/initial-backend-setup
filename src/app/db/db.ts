@@ -18,7 +18,6 @@ export const initiateSuperAdmin = async () => {
 
   const isExistUser = await prisma.user.findUnique({
     where: {
-      username: payload.username,
       email: payload.email,
     },
   });
