@@ -1,7 +1,7 @@
 import { Server } from "http";
 import config from "./config";
 
-import prisma from "./shared/prisma";
+
 import app from "./app";
 
 let server: Server;

@@ -13,7 +13,7 @@ import httpStatus from "http-status";
 const createUserIntoDb = async (payload: User) => {
   const existingUser = await prisma.user.findFirst({
     where: {
-      OR: [{ email: payload.email }, { username: payload.username }],
+      email: payload.email,
     },
   });
 
@@ -22,12 +22,6 @@ const createUserIntoDb = async (payload: User) => {
       throw new ApiError(
         400,
         `User with this email ${payload.email} already exists`
-      );
-    }
-    if (existingUser.username === payload.username) {
-      throw new ApiError(
-        400,
-        `User with this username ${payload.username} already exists`
       );
     }
   }
@@ -40,8 +34,8 @@ const createUserIntoDb = async (payload: User) => {
     data: { ...payload, password: hashedPassword },
     select: {
       id: true,
-      name: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       email: true,
       role: true,
       createdAt: true,
@@ -97,8 +91,8 @@ const getUsersFromDb = async (
           },
     select: {
       id: true,
-      name: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       email: true,
       profileImage: true,
       role: true,
@@ -123,6 +117,26 @@ const getUsersFromDb = async (
   };
 };
 
+// get user profile
+const getMyProfile = async (userId: string) => {
+  const userProfile = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      profileImage: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return userProfile;
+};
+
 // update profile by user won profile uisng token or email and id
 const updateProfile = async (user: IUser, payload: User) => {
   const userInfo = await prisma.user.findUnique({
@@ -141,22 +155,13 @@ const updateProfile = async (user: IUser, payload: User) => {
     where: {
       email: userInfo.email,
     },
-    data: {
-      name: payload.name || userInfo.name,
-      username: payload.username || userInfo.username,
-      email: payload.email || userInfo.email,
-      profileImage: payload.profileImage || userInfo.profileImage,
-      phoneNumber: payload.phoneNumber || userInfo.phoneNumber,
-    },
+    data: payload,
     select: {
       id: true,
-      name: true,
-      username: true,
-
-      
+      firstName: true,
+      lastName: true,
       email: true,
       profileImage: true,
-      phoneNumber: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -188,8 +193,8 @@ const updateUserIntoDb = async (payload: IUser, id: string) => {
     data: payload,
     select: {
       id: true,
-      name: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       email: true,
       profileImage: true,
       role: true,
@@ -212,4 +217,5 @@ export const userService = {
   getUsersFromDb,
   updateProfile,
   updateUserIntoDb,
+  getMyProfile,
 };

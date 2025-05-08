@@ -5,6 +5,7 @@ import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
 import { string } from "zod";
 
+// login user
 const loginUser = catchAsync(async (req: Request, res: Response) => {
 
   const result = await AuthServices.loginUser(req.body);
@@ -16,6 +17,8 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+// logout user
 const logoutUser = catchAsync(async (req: Request, res: Response) => {
   // Clear the token cookie
   res.clearCookie("token", {
@@ -32,18 +35,7 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// get user profile
-const getMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const userToken = req.headers.authorization;
 
-  const result = await AuthServices.getMyProfile(userToken as string);
-  sendResponse(res, {
-    success: true,
-    statusCode: 201,
-    message: "User profile retrieved successfully",
-    data: result,
-  });
-});
 
 // change password
 const changePassword = catchAsync(async (req: Request, res: Response) => {
@@ -77,6 +69,8 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   })
 });
 
+
+// reset password
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
   const token = req.headers.authorization || "";
@@ -96,7 +90,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 export const AuthController = {
   loginUser,
   logoutUser,
-  getMyProfile,
+
   changePassword,
   forgotPassword,
   resetPassword

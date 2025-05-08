@@ -18,11 +18,6 @@ router.post(
 // user logout route
 router.post("/logout", AuthController.logoutUser);
 
-router.get(
-  "/profile",
-  auth(UserRole.ADMIN, UserRole.USER),
-  AuthController.getMyProfile
-);
 
 router.put(
   "/change-password",

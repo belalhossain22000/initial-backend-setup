@@ -43,31 +43,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
   return { token: accessToken };
 };
 
-// get user profile
-const getMyProfile = async (userToken: string) => {
-  const decodedToken = jwtHelpers.verifyToken(
-    userToken,
-    config.jwt.jwt_secret!
-  );
 
-  const userProfile = await prisma.user.findUnique({
-    where: {
-      id: decodedToken.id,
-    },
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      email: true,
-      profileImage: true,
-      phoneNumber: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  return userProfile;
-};
 
 // change password
 
@@ -130,7 +106,7 @@ const forgotPassword = async (payload: { email: string }) => {
     userData.email,
     `
      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <p>Dear ${userData.name},</p>
+          <p>Dear ${userData.firstName},</p>
           
           <p>We received a request to reset your password. Click the button below to reset your password:</p>
           
@@ -184,7 +160,7 @@ const resetPassword = async (token: string, payload: { password: string }) => {
 
 export const AuthServices = {
   loginUser,
-  getMyProfile,
+
   changePassword,
   forgotPassword,
   resetPassword,
