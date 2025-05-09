@@ -12,7 +12,6 @@ model User {
   lastName     String
   email        String     @unique
   phone        String
-  bankId       String
   profileImage String?
   password     String
   role         UserRole   @default(USER)

@@ -5,10 +5,10 @@ import * as bcrypt from "bcrypt";
 
 export const initiateSuperAdmin = async () => {
   const payload: any = {
-    name: "Super",
-    username: "Admin",
+    firstName: "Super",
+    lastName: "Admin",
     email: "belalhossain22000@gmail.com",
-    phoneNumber: "1234567890",
+    phone: "1234567890",
     role: UserRole.SUPER_ADMIN,
   };
   const hashedPassword: string = await bcrypt.hash(

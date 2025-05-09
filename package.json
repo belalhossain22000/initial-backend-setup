@@ -29,6 +29,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.806.0",
     "@prisma/client": "^6.6.0",
     "@types/jsonwebtoken": "^9.0.9",
     "bcrypt": "^5.1.1",
