@@ -40,6 +40,7 @@ export const uploadToDigitalOceanAWS = async (
   file: FileObject,
 ): Promise<UploadResponse> => {
   try {
+
     let fileBody: Buffer | Readable;
 
     // Handle both file paths and buffers
