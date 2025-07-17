@@ -8,7 +8,8 @@
     "build": "tsc",
     "generate": "ts-node src/generate-module.ts",
     "postinstall": "prisma generate",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "@types/node": "^22.14.1",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.17",
+    "husky": "^9.1.7",
     "prisma": "^6.6.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
@@ -47,6 +49,7 @@
     "nodemon": "^3.1.9",
     "socket.io": "^4.8.1",
     "stripe": "^18.0.0",
+    "vercel": "^44.4.3",
     "zod": "^3.24.3"
   }
 }
