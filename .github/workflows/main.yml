@@ -20,6 +20,17 @@ jobs:
           node-version: 22.12
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client (if using Prisma)
+        run: npx prisma generate
+        continue-on-error: true
+
+      - name: Build application
+        run: npm run build
+        continue-on-error: true
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
