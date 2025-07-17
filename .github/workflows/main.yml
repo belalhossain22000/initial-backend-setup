@@ -1,15 +1,13 @@
-name: Deploy to Vercel
+name: Deploy to Hostinger
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,36 +16,58 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.12
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
-      - name: Generate Prisma Client (if using Prisma)
-        run: npx prisma generate
-        continue-on-error: true
-
-      - name: Build application
+      - name: Build
         run: npm run build
-        continue-on-error: true
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+  deploy:
+    runs-on: ubuntu-latest
 
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    needs: build
 
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12
 
-      - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Load Node Version Manager (NVM)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            # Use the correct Node.js version (ensure your VPS has NVM installed)
+            nvm use 22 || nvm install 22
+
+            # Install PM2 globally if not installed
+            # npm install -g pm2
+
+            # Navigate to the project directory
+            cd /var/www/passitfi-server
+
+            # Pull the latest changes from the main branch
+            git pull origin main
+
+            # Install dependencies using npm
+            npm install
+
+            # Generate Prisma Client
+            npx prisma generate
+
+            # Build the application
+            npm run build
+
+            # Restart the app with PM2 (or start if not running)
+            pm2 restart server || pm2 start npm --name "server" -- start
