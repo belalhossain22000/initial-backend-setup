@@ -8,6 +8,7 @@ import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
 import { userSearchAbleFields } from "./user.costant";
 import config from "../../../config";
 import httpStatus from "http-status";
+import { OtpService } from "../Otp/Otp.service";
 
 // Create a new user in the database.
 const createUserIntoDb = async (payload: User) => {
@@ -31,17 +32,18 @@ const createUserIntoDb = async (payload: User) => {
   );
 
   const result = await prisma.user.create({
-    data: { ...payload, password: hashedPassword },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    data: { ...payload, password: hashedPassword, isEmailVerified: false },
   });
+
+  if (!result)
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to create user profile"
+    );
+
+  if (result) {
+    await OtpService.sendOtp(payload.email);
+  }
 
   return result;
 };
@@ -54,10 +56,10 @@ const getUsersFromDb = async (
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = params;
 
-  const andCondions: Prisma.UserWhereInput[] = [];
+  const andConditions: Prisma.UserWhereInput[] = [];
 
   if (params.searchTerm) {
-    andCondions.push({
+    andConditions.push({
       OR: userSearchAbleFields.map((field) => ({
         [field]: {
           contains: params.searchTerm,
@@ -68,7 +70,7 @@ const getUsersFromDb = async (
   }
 
   if (Object.keys(filterData).length > 0) {
-    andCondions.push({
+    andConditions.push({
       AND: Object.keys(filterData).map((key) => ({
         [key]: {
           equals: (filterData as any)[key],
@@ -76,10 +78,10 @@ const getUsersFromDb = async (
       })),
     });
   }
-  const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
+  const whereConditions: Prisma.UserWhereInput = { AND: andConditions };
 
   const result = await prisma.user.findMany({
-    where: whereConditons,
+    where: whereConditions,
     skip,
     orderBy:
       options.sortBy && options.sortOrder
@@ -89,19 +91,9 @@ const getUsersFromDb = async (
         : {
             createdAt: "desc",
           },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      profileImage: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
   });
   const total = await prisma.user.count({
-    where: whereConditons,
+    where: whereConditions,
   });
 
   if (!result || result.length === 0) {
@@ -117,20 +109,24 @@ const getUsersFromDb = async (
   };
 };
 
+//get user byid
+const getUserById = async (id: string) => {
+  const result = await prisma.user.findUnique({
+    where: {
+      id: id,
+    },
+  });
+  if (!result) {
+    throw new ApiError(404, "User not found");
+  }
+  return result;
+};
+
 // get user profile
 const getMyProfile = async (userId: string) => {
   const userProfile = await prisma.user.findUnique({
     where: {
       id: userId,
-    },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      profileImage: true,
-      createdAt: true,
-      updatedAt: true,
     },
   });
 
@@ -156,15 +152,6 @@ const updateProfile = async (user: IUser, payload: User) => {
       email: userInfo.email,
     },
     data: payload,
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      profileImage: true,
-      createdAt: true,
-      updatedAt: true,
-    },
   });
 
   if (!result)
@@ -191,16 +178,6 @@ const updateUserIntoDb = async (payload: IUser, id: string) => {
       id: userInfo.id,
     },
     data: payload,
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      profileImage: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
   });
 
   if (!result)
@@ -215,6 +192,7 @@ const updateUserIntoDb = async (payload: IUser, id: string) => {
 export const userService = {
   createUserIntoDb,
   getUsersFromDb,
+  getUserById,
   updateProfile,
   updateUserIntoDb,
   getMyProfile,

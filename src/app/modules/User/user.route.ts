@@ -14,21 +14,25 @@ router.post(
   userController.createUser
 );
 
-// get all  user
-router.get("/", userController.getUsers);
-
 //get my profile
 router.get(
   "/profile",
   auth(),
   userController.getMyProfile
 );
+// get all  user
+router.get("/", userController.getUsers);
+
+//get user by id
+router.get("/:id", userController.getUserById);
+
+
 
 // profile user
 router.put(
   "/profile",
   validateRequest(UserValidation.userUpdateSchema),
-  auth(UserRole.ADMIN, UserRole.USER),
+  auth(),
   userController.updateProfile
 );
 

@@ -6,27 +6,41 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Otp {
+  id          String   @id @default(uuid())
+  email       String
+  otp         Int
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  isUsed      Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([expiresAt])
+  @@map("Otps")
+}
+
 model User {
-  id           String     @id @default(uuid())
-  firstName    String
-  lastName     String
-  email        String     @unique
-  phone        String
-  profileImage String?
-  password     String
-  role         UserRole   @default(USER)
-  status       UserStatus @default(ACTIVE)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  isEmailVerified Boolean    @default(false)
+  password        String
+  role            UserRole   @default(STUDENT)
+  status          UserStatus @default(ACTIVE)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   @@map("Users")
 }
 
-
 enum UserRole {
   ADMIN
   SUPER_ADMIN
-  USER
+  STUDENT
+  SUPERVISOR
 }
 
 enum UserStatus {

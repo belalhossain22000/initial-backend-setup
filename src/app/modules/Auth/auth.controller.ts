@@ -7,13 +7,12 @@ import { string } from "zod";
 
 // login user
 const loginUser = catchAsync(async (req: Request, res: Response) => {
-
   const result = await AuthServices.loginUser(req.body);
   res.cookie("token", result.token, { httpOnly: true });
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User logged in successfully",
+    message: result.message || "User logged in successfully",
     data: result,
   });
 });
@@ -35,8 +34,6 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
-
 // change password
 const changePassword = catchAsync(async (req: Request, res: Response) => {
   const userToken = req.headers.authorization;
@@ -55,37 +52,31 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 // forgot password
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
-
   await AuthServices.forgotPassword(req.body);
 
   sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Check your email!",
-      data: null
-  })
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Check your email!",
+    data: null,
+  });
 });
-
 
 // reset password
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-
   const token = req.headers.authorization || "";
 
   await AuthServices.resetPassword(token, req.body);
 
   sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Password Reset!",
-      data: null
-  })
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Password Reset!",
+    data: null,
+  });
 });
-
-
 
 export const AuthController = {
   loginUser,
@@ -93,5 +84,5 @@ export const AuthController = {
 
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
 };

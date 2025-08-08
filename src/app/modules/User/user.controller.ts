@@ -11,7 +11,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User Registered successfully!",
+    message: "User Registered successfully! Please verify your email ",
     data: result,
   });
 });
@@ -28,6 +28,18 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Users retrieve successfully!",
+    data: result,
+  });
+});
+
+//get user by id
+const getUserById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const result = await userService.getUserById(id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User retrieve successfully!",
     data: result,
   });
 });
@@ -75,6 +87,7 @@ const id = req.params.id;
 export const userController = {
   createUser,
   getUsers,
+  getUserById,
   updateProfile,
   updateUser,
   getMyProfile

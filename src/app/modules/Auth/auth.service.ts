@@ -4,9 +4,11 @@ import { jwtHelpers } from "../../../helpars/jwtHelpers";
 import prisma from "../../../shared/prisma";
 import * as bcrypt from "bcrypt";
 import ApiError from "../../../errors/ApiErrors";
-import emailSender from "./emailSender";
+
 import { UserStatus } from "@prisma/client";
 import httpStatus from "http-status";
+import { OtpService } from "../Otp/Otp.service";
+import emailSender from "../../../shared/emailSernder";
 
 // user login
 const loginUser = async (payload: { email: string; password: string }) => {
@@ -22,6 +24,12 @@ const loginUser = async (payload: { email: string; password: string }) => {
       "User not found! with this email " + payload.email
     );
   }
+
+  if (!userData.isEmailVerified) {
+    await OtpService.sendOtp(payload.email);
+    return { message: "Please verify your email" };
+  }
+
   const isCorrectPassword: boolean = await bcrypt.compare(
     payload.password,
     userData.password
@@ -42,8 +50,6 @@ const loginUser = async (payload: { email: string; password: string }) => {
 
   return { token: accessToken };
 };
-
-
 
 // change password
 
@@ -99,14 +105,13 @@ const forgotPassword = async (payload: { email: string }) => {
 
   const resetPassLink =
     config.reset_pass_link + `?userId=${userData.id}&token=${resetPassToken}`;
- 
 
   await emailSender(
     "Reset Your Password",
     userData.email,
     `
      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <p>Dear ${userData.firstName},</p>
+          <p>Dear ${userData.name},</p>
           
           <p>We received a request to reset your password. Click the button below to reset your password:</p>
           
