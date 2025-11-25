@@ -1,5 +1,4 @@
 {
-    "cSpell.words": [
-        "reterive"
-    ]
+  "cSpell.words": ["reterive"],
+  "prisma.pinToPrisma6": true
 }

@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model Otp {
-  id          String   @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId // ← Fixed: ObjectId (capital O)
   email       String
   otp         Int
   attempts    Int      @default(0)
@@ -23,7 +23,7 @@ model Otp {
 }
 
 model User {
-  id              String     @id @default(uuid())
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId // ← Fixed: ObjectId (capital O)
   name            String
   email           String     @unique
   isEmailVerified Boolean    @default(false)

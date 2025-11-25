@@ -1,7 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { initiateSuperAdmin } from "../app/db/db";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DATABASE_URL,
+});
+
 
 async function connectPrisma() {
   try {
