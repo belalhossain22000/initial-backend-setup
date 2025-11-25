@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Otp {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId // ← Fixed: ObjectId (capital O)
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId 
   email       String
   otp         Int
   attempts    Int      @default(0)
@@ -23,7 +23,7 @@ model Otp {
 }
 
 model User {
-  id              String     @id @default(auto()) @map("_id") @db.ObjectId // ← Fixed: ObjectId (capital O)
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
   name            String
   email           String     @unique
   isEmailVerified Boolean    @default(false)
