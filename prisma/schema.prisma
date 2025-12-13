@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Resource {
+model User {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
   name                       String
@@ -24,6 +24,8 @@ model Resource {
   password                   String?
   resetToken                 String?
   resetExpires               DateTime?
+  inviteSentAt               DateTime?
+  inviteCount                Int                         @default(0)
   isPasswordChanged          Boolean?                    @default(false)
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
@@ -172,7 +174,7 @@ model ResourceAvailability {
   availabilityId String            @db.ObjectId
   availability   AvailabilityState @relation(fields: [availabilityId], references: [id])
 
-  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resource User @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -190,7 +192,7 @@ model ResourceEnergy {
   energyId String      @db.ObjectId
   energy   EnergyLevel @relation(fields: [energyId], references: [id])
 
-  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resource User @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -246,7 +248,7 @@ model AvailabilityChangeRequest {
   resourceId String   @db.ObjectId
   date       DateTime
 
-  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resource User @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   // ===== Requested Changes =====
   requestedAvailabilityId String?            @db.ObjectId
@@ -283,8 +285,8 @@ model ProjectAssignment {
   phaseId    String @db.ObjectId
 
   project  Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  resource Resource     @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  phase    ProjectPhase @relation(fields: [phaseId], references: [id] , onDelete: Cascade)
+  resource User         @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  phase    ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
 
   allocation Int? // % allocation for THIS PHASE (0–100)
 
