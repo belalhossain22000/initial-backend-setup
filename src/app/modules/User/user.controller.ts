@@ -17,6 +17,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+
 // get all user form db
 const getUsers = catchAsync(async (req: Request, res: Response) => {
 

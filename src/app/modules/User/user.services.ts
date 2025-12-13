@@ -4,48 +4,75 @@ import { IUser, IUserFilterRequest } from "./user.interface";
 import * as bcrypt from "bcrypt";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import { paginationHelper } from "../../../helpars/paginationHelper";
-import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
+import { Prisma, User, UserRole } from "@prisma/client";
 import { userSearchAbleFields } from "./user.costant";
 import config from "../../../config";
 import httpStatus from "http-status";
-import { OtpService } from "../Otp/Otp.service";
+import setupAccount from "../../../emailTemplate/setupAccount";
+import emailSender from "../../../shared/emailSernder";
+import crypto from "crypto";
 
 // Create a new user in the database.
 const createUserIntoDb = async (payload: User) => {
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      email: payload.email,
-    },
+  // 1️⃣ Check existing user
+  const existingUser = await prisma.user.findUnique({
+    where: { email: payload.email },
   });
 
   if (existingUser) {
-    if (existingUser.email === payload.email) {
-      throw new ApiError(
-        400,
-        `User with this email ${payload.email} already exists`
-      );
-    }
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `User with this email ${payload.email} already exists`
+    );
   }
-  const hashedPassword: string = await bcrypt.hash(
-    payload.password,
-    Number(config.bcrypt_salt_rounds)
-  );
 
-  const result = await prisma.user.create({
-    data: { ...payload, password: hashedPassword, isEmailVerified: false },
+  // 2️⃣ Generate secure invite token
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(rawToken)
+    .digest("hex");
+
+  const tokenExpiry = new Date();
+  tokenExpiry.setHours(tokenExpiry.getHours() + 24); // 24h expiry
+
+  // 3️⃣ Create user WITHOUT password
+  const user = await prisma.user.create({
+    data: {
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+      role: payload.role,
+      location: payload.location,
+      expertise: payload.expertise ?? [],
+      notes: payload.notes,
+
+      password: null,
+      resetToken: hashedToken,
+      resetExpires: tokenExpiry,
+      inviteSentAt: new Date(),
+      inviteCount: 1,
+      isPasswordChanged: false,
+    },
   });
 
-  if (!result)
+  if (!user) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Failed to create user profile"
+      "Failed to create user"
     );
-
-  if (result) {
-    await OtpService.sendOtp(payload.email);
   }
 
-  return result;
+  // 4️⃣ Send invitation email
+  const inviteLink = `${config.set_pass_link}/set-password?token=${rawToken}`;
+
+  await emailSender(
+    "Set up your account",
+    user.email,
+    setupAccount(inviteLink)
+  );
+
+  return user;
 };
 
 // reterive all users from the database also searcing anf filetering
@@ -189,6 +216,48 @@ const updateUserIntoDb = async (payload: IUser, id: string) => {
   return result;
 };
 
+const resendUserInvite = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (user.isPasswordChanged) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User already activated");
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(rawToken)
+    .digest("hex");
+
+  const expiry = new Date();
+  expiry.setHours(expiry.getHours() + 24);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      resetToken: hashedToken,
+      resetExpires: expiry,
+      inviteSentAt: new Date(),
+      inviteCount: { increment: 1 },
+    },
+  });
+
+  const inviteLink = `${config.set_pass_link}/set-password?token=${rawToken}`;
+
+  await emailSender(
+    "Your invitation link",
+    user.email,
+    `<p>Click here to set your password:</p><a href="${inviteLink}">${inviteLink}</a>`
+  );
+};
+
+
 export const userService = {
   createUserIntoDb,
   getUsersFromDb,
@@ -196,4 +265,5 @@ export const userService = {
   updateProfile,
   updateUserIntoDb,
   getMyProfile,
+  resendUserInvite
 };

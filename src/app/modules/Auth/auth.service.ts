@@ -4,10 +4,8 @@ import { jwtHelpers } from "../../../helpars/jwtHelpers";
 import prisma from "../../../shared/prisma";
 import * as bcrypt from "bcrypt";
 import ApiError from "../../../errors/ApiErrors";
-
-import { UserStatus } from "@prisma/client";
+import crypto from "crypto";
 import httpStatus from "http-status";
-import { OtpService } from "../Otp/Otp.service";
 import emailSender from "../../../shared/emailSernder";
 
 // user login
@@ -25,14 +23,9 @@ const loginUser = async (payload: { email: string; password: string }) => {
     );
   }
 
-  if (!userData.isEmailVerified) {
-    await OtpService.sendOtp(payload.email);
-    return { message: "Please verify your email" };
-  }
-
-  const isCorrectPassword: boolean = await bcrypt.compare(
+  const isCorrectPassword = await bcrypt.compare(
     payload.password,
-    userData.password
+    userData.password!
   );
 
   if (!isCorrectPassword) {
@@ -71,7 +64,7 @@ const changePassword = async (
     throw new ApiError(404, "User not found");
   }
 
-  const isPasswordValid = await bcrypt.compare(oldPassword, user?.password);
+  const isPasswordValid = await bcrypt.compare(oldPassword, user?.password!);
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Incorrect old password");
@@ -79,7 +72,7 @@ const changePassword = async (
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-  const result = await prisma.user.update({
+  await prisma.user.update({
     where: {
       id: decodedToken.id,
     },
@@ -163,9 +156,38 @@ const resetPassword = async (token: string, payload: { password: string }) => {
   return { message: "Password reset successfully" };
 };
 
+const setPassword = async (token: string, newPassword: string) => {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await prisma.user.findFirst({
+    where: {
+      resetToken: hashedToken,
+      resetExpires: { gt: new Date() },
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid or expired token");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      resetToken: null,
+      resetExpires: null,
+      isPasswordChanged: true,
+    },
+  });
+
+  return true;
+};
+
 export const AuthServices = {
   loginUser,
-
+  setPassword,
   changePassword,
   forgotPassword,
   resetPassword,
