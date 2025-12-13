@@ -10,23 +10,25 @@ datasource db {
 model Resource {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  name              String
-  role              UserRole  @default(USER)
-  email             String
-  phone             String
-  location          String?
-  expertise         String[]
-  startTime         DateTime?
-  endTime           DateTime?
-  workingDays       String[]
-  notes             String?
-  profileImage      String?
-  password          String?
-  resetToken        String?
-  resetExpires      DateTime?
-  isPasswordChanged Boolean?  @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  name                   String
+  role                   UserRole               @default(USER)
+  email                  String
+  phone                  String
+  location               String?
+  expertise              String[]
+  startTime              DateTime?
+  endTime                DateTime?
+  workingDays            String[]
+  notes                  String?
+  profileImage           String?
+  password               String?
+  resetToken             String?
+  resetExpires           DateTime?
+  isPasswordChanged      Boolean?               @default(false)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  resourceAvailabilities ResourceAvailability[]
+  resourceEnergies       ResourceEnergy[]
 
   @@unique([email])
   @@unique([phone])
@@ -76,12 +78,14 @@ enum WeekDay {
 }
 
 model AvailabilityState {
-  id          String          @id @default(auto()) @map("_id") @db.ObjectId
-  key         AvailabilityKey @default(AVAILABLE)
-  description String?
-  color       String // hex: "#22c55e", "#facc15", "#ef4444"
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id                     String                 @id @default(auto()) @map("_id") @db.ObjectId
+  key                    AvailabilityKey        @default(AVAILABLE)
+  availabilityPercentage Int                    @default(100)
+  description            String?
+  color                  String // hex: "#22c55e", "#facc15", "#ef4444"
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  resourceAvailabilities ResourceAvailability[]
 
   @@unique([key])
   @@map("availability_states")
@@ -91,6 +95,27 @@ enum AvailabilityKey {
   AVAILABLE
   PARTIAL
   FULLY_BOOKED
+}
+
+model EnergyLevel {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  key         EnergyKey
+  description String?
+  color       String // hex color e.g. "#2563eb"
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  resourceEnergies ResourceEnergy[]
+
+  @@unique([key])
+  @@map("energy_levels")
+}
+
+enum EnergyKey {
+  HIGH
+  MEDIUM
+  LOW
+  RECOVERY
 }
 
 model ProjectPhase {
@@ -129,4 +154,40 @@ enum ProjectStatusKey {
   PRODUCTION
   SPECULATION
   CANCELLED
+}
+
+model ResourceAvailability {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  resourceId String   @db.ObjectId
+  date       DateTime
+
+  availabilityId String            @db.ObjectId
+  availability   AvailabilityState @relation(fields: [availabilityId], references: [id])
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([resourceId, date])
+  @@map("resource_availability")
+}
+
+model ResourceEnergy {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  resourceId String   @db.ObjectId
+  date       DateTime
+
+  energyId String      @db.ObjectId
+  energy   EnergyLevel @relation(fields: [energyId], references: [id])
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([resourceId, date])
+  @@map("resource_energy")
 }
