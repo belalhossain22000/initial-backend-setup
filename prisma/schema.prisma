@@ -7,44 +7,126 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Otp {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId 
-  email       String
-  otp         Int
-  attempts    Int      @default(0)
-  maxAttempts Int      @default(3)
-  isUsed      Boolean  @default(false)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Resource {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  @@index([expiresAt])
-  @@map("Otps")
-}
+  name              String
+  role              UserRole  @default(USER)
+  email             String
+  phone             String
+  location          String?
+  expertise         String[]
+  startTime         DateTime?
+  endTime           DateTime?
+  workingDays       String[]
+  notes             String?
+  profileImage      String?
+  password          String?
+  resetToken        String?
+  resetExpires      DateTime?
+  isPasswordChanged Boolean?  @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-model User {
-  id              String     @id @default(auto()) @map("_id") @db.ObjectId
-  name            String
-  email           String     @unique
-  isEmailVerified Boolean    @default(false)
-  password        String
-  role            UserRole   @default(STUDENT)
-  status          UserStatus @default(ACTIVE)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-
-  @@map("Users")
+  @@unique([email])
+  @@unique([phone])
+  @@map("users")
 }
 
 enum UserRole {
   ADMIN
   SUPER_ADMIN
-  STUDENT
-  SUPERVISOR
+  USER
+  TEACHER
 }
 
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  BLOCKED
+model WorkSchedule {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  startTime String // "09:00"
+  endTime   String // "17:00"
+
+  workingDays WorkingDay[] // relation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("work_schedules")
+}
+
+model WorkingDay {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  day      WeekDay
+  isActive Boolean @default(true)
+
+  scheduleId String       @db.ObjectId
+  schedule   WorkSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, day])
+  @@map("working_days")
+}
+
+enum WeekDay {
+  M
+  T
+  W
+  TH
+  F
+  S
+  SU
+}
+
+model AvailabilityState {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  key         AvailabilityKey @default(AVAILABLE)
+  description String?
+  color       String // hex: "#22c55e", "#facc15", "#ef4444"
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([key])
+  @@map("availability_states")
+}
+
+enum AvailabilityKey {
+  AVAILABLE
+  PARTIAL
+  FULLY_BOOKED
+}
+
+model ProjectPhase {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  key         PhaseKey
+  description String?
+  color       String // hex color e.g. "#4f46e5"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key])
+  @@map("project_phases")
+}
+
+enum PhaseKey {
+  PITCH
+  PRODUCTION
+  EVENT_DAYS
+  WRAP_UP
+}
+
+model ProjectStatus {
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  key         ProjectStatusKey
+  description String?
+  color       String // hex color e.g. "#22c55e"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key])
+}
+
+enum ProjectStatusKey {
+  PRODUCTION
+  SPECULATION
+  CANCELLED
 }
