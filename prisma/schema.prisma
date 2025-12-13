@@ -284,7 +284,9 @@ model ProjectAssignment {
 
   project  Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   resource Resource     @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  phase    ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  phase    ProjectPhase @relation(fields: [phaseId], references: [id] , onDelete: Cascade)
+
+  allocation Int? // % allocation for THIS PHASE (0–100)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
