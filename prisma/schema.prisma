@@ -10,25 +10,27 @@ datasource db {
 model Resource {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  name                   String
-  role                   UserRole               @default(USER)
-  email                  String
-  phone                  String
-  location               String?
-  expertise              String[]
-  startTime              DateTime?
-  endTime                DateTime?
-  workingDays            String[]
-  notes                  String?
-  profileImage           String?
-  password               String?
-  resetToken             String?
-  resetExpires           DateTime?
-  isPasswordChanged      Boolean?               @default(false)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  resourceAvailabilities ResourceAvailability[]
-  resourceEnergies       ResourceEnergy[]
+  name                       String
+  role                       UserRole                    @default(USER)
+  email                      String
+  phone                      String
+  location                   String?
+  expertise                  String[]
+  startTime                  DateTime?
+  endTime                    DateTime?
+  workingDays                String[]
+  notes                      String?
+  profileImage               String?
+  password                   String?
+  resetToken                 String?
+  resetExpires               DateTime?
+  isPasswordChanged          Boolean?                    @default(false)
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  resourceAvailabilities     ResourceAvailability[]
+  resourceEnergies           ResourceEnergy[]
+  availabilityChangeRequests AvailabilityChangeRequest[]
+  projectAssignments         ProjectAssignment[]
 
   @@unique([email])
   @@unique([phone])
@@ -78,14 +80,15 @@ enum WeekDay {
 }
 
 model AvailabilityState {
-  id                     String                 @id @default(auto()) @map("_id") @db.ObjectId
-  key                    AvailabilityKey        @default(AVAILABLE)
-  availabilityPercentage Int                    @default(100)
-  description            String?
-  color                  String // hex: "#22c55e", "#facc15", "#ef4444"
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  resourceAvailabilities ResourceAvailability[]
+  id                         String                      @id @default(auto()) @map("_id") @db.ObjectId
+  key                        AvailabilityKey             @default(AVAILABLE)
+  availabilityPercentage     Int                         @default(100)
+  description                String?
+  color                      String // hex: "#22c55e", "#facc15", "#ef4444"
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  resourceAvailabilities     ResourceAvailability[]
+  availabilityChangeRequests AvailabilityChangeRequest[]
 
   @@unique([key])
   @@map("availability_states")
@@ -103,9 +106,10 @@ model EnergyLevel {
   description String?
   color       String // hex color e.g. "#2563eb"
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  resourceEnergies ResourceEnergy[]
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  resourceEnergies           ResourceEnergy[]
+  availabilityChangeRequests AvailabilityChangeRequest[]
 
   @@unique([key])
   @@map("energy_levels")
@@ -124,8 +128,10 @@ model ProjectPhase {
   description String?
   color       String // hex color e.g. "#4f46e5"
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  projectPhaseTimelines ProjectPhaseTimeline[]
+  projectAssignments    ProjectAssignment[]
 
   @@unique([key])
   @@map("project_phases")
@@ -144,8 +150,9 @@ model ProjectStatus {
   description String?
   color       String // hex color e.g. "#22c55e"
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
 
   @@unique([key])
 }
@@ -190,4 +197,98 @@ model ResourceEnergy {
 
   @@unique([resourceId, date])
   @@map("resource_energy")
+}
+
+model Project {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  customerName   String
+  projectName    String
+  projectCode    String        @unique
+  projectType    String
+  location       String?
+  statusId       String        @db.ObjectId
+  status         ProjectStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  winProbability Int           @default(0)
+  estimatedValue Float         @default(0.0)
+  currency       String
+
+  phases ProjectPhaseTimeline[]
+
+  createdBy          String              @db.ObjectId
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  projectAssignments ProjectAssignment[]
+
+  @@map("projects")
+}
+
+model ProjectPhaseTimeline {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  projectId String @db.ObjectId
+  phaseId   String @db.ObjectId
+
+  startDate DateTime
+  endDate   DateTime
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  phase ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, phaseId])
+  @@map("project_phase_timeline")
+}
+
+model AvailabilityChangeRequest {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // ===== Who & When =====
+  resourceId String   @db.ObjectId
+  date       DateTime
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  // ===== Requested Changes =====
+  requestedAvailabilityId String?            @db.ObjectId
+  requestedAvailability   AvailabilityState? @relation(fields: [requestedAvailabilityId], references: [id])
+
+  requestedEnergyId String?      @db.ObjectId
+  requestedEnergy   EnergyLevel? @relation(fields: [requestedEnergyId], references: [id])
+
+  // ===== Approval Workflow =====
+  status RequestStatus @default(PENDING)
+  reason String?
+
+  approvedBy String?   @db.ObjectId // admin id
+  approvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resourceId, date])
+  @@map("availability_change_requests")
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ProjectAssignment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  projectId  String @db.ObjectId
+  resourceId String @db.ObjectId
+  phaseId    String @db.ObjectId
+
+  project  Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  resource Resource     @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  phase    ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, resourceId, phaseId])
+  @@map("project_assignments")
 }
