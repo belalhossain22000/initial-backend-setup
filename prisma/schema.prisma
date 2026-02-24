@@ -1,50 +1,44 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model Otp {
-  id          String   @id @default(uuid())
-  email       String
-  otp         Int
-  attempts    Int      @default(0)
-  maxAttempts Int      @default(3)
-  isUsed      Boolean  @default(false)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([expiresAt])
-  @@map("Otps")
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
 }
 
 model User {
-  id              String     @id @default(uuid())
-  name            String
-  email           String     @unique
-  isEmailVerified Boolean    @default(false)
-  password        String
-  role            UserRole   @default(STUDENT)
-  status          UserStatus @default(ACTIVE)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+    id              String     @id @default(auto()) @map("_id") @db.ObjectId
+    fullName        String
+    email           String     @unique
+    phone           String?
+    bio             String?
+    avatar          String?
+    password        String
+    role            UserRole
+    status          UserStatus @default(ACTIVE)
+    isEmailVerified Boolean    @default(false)
+    createdById     String?    @db.ObjectId
+    lastLoginAt     DateTime?
+    createdAt       DateTime   @default(now())
+    updatedAt       DateTime   @updatedAt
 
-  @@map("Users")
+    @@index([role])
+    @@map("Users")
 }
 
 enum UserRole {
-  ADMIN
-  SUPER_ADMIN
-  STUDENT
-  SUPERVISOR
+    SUPER_ADMIN
+    COMPANY_OWNER
+    ADMIN_MANAGER
+    SALES_REP_MANAGER
+    SALES_REP
+    CALL_CENTER_MANAGER
+    APPOINTMENT_SETTER
 }
 
 enum UserStatus {
-  ACTIVE
-  INACTIVE
-  BLOCKED
+    ACTIVE
+    INACTIVE
+    BLOCKED
 }
